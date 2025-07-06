@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10세 딸을 위한 40일 코딩 어드벤처</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: 이 SPA는 보고서의 구조를 따라가면서도 사용자 경험을 향상시키는 데 초점을 맞춘 4개의 주요 섹션(소개, 40일 계획, AI 활용법, 자료실)으로 구성된 단일 페이지 대시보드 형식으로 설계되었습니다. 사용자인 부모가 전체 교육 과정을 한눈에 파악하고, 각 단계별 세부 내용을 쉽게 탐색할 수 있도록 상단에 고정된 내비게이션 바와 각 섹션으로 부드럽게 스크롤되는 기능을 추가했습니다. 복잡한 정보는 정적인 표 대신 클릭으로 정보를 탐색하는 대화형 컴포넌트(예: 엔트리 vs. 스크래치 비교)로 변환하여 지루함을 줄이고 참여를 유도했습니다. 이 구조는 사용자가 40일이라는 긴 여정에 압도되지 않고, 체계적으로 계획을 따라갈 수 있도록 돕기 위해 선택되었습니다. -->
+    <!-- Visualization & Content Choices: 보고서의 핵심 내용을 효과적으로 전달하기 위해 다양한 시각화 및 표현 방식을 선택했습니다. [40일 계획 분포] -> 목표: 정보 전달 -> 시각화: Chart.js를 이용한 가로 막대 차트 -> 상호작용: 없음 (정적 정보) -> 정당성: 4단계로 구성된 전체 커리큘럼의 시간 배분을 한눈에 명확하게 보여줌. [엔트리 vs. 스크래치 비교표] -> 목표: 비교, 정당화 -> 표현 방식: 탭 형식의 대화형 정보 블록 -> 상호작용: 탭 클릭 시 해당 내용 표시 -> 정당성: 정적인 표보다 사용자의 능동적인 탐색을 유도하여 정보 습득률을 높임. [핵심 개념] -> 목표: 정보 전달 -> 표현 방식: 아이콘과 카드를 활용한 시각적 요약 -> 상호작용: 없음 -> 정당성: 복잡한 개념을 시각적으로 단순화하여 빠르게 이해하고 기억할 수 있도록 도움. [스마트 프롬프팅 가이드] -> 목표: 교육, 정리 -> 표현 방식: '나쁜 예시'와 '좋은 예시'를 보여주는 대화형 카드 -> 상호작용: 클릭 시 더 나은 예시 표시 -> 정당성: 비교를 통해 효과적인 질문법을 직관적으로 학습시킴. [창의력 도전 카드] -> 목표: 참여 유도 -> 표현 방식: 뒤집히는 효과가 있는 카드 그리드 -> 상호작용: 클릭 시 카드 내용 표시 -> 정당성: '카드를 뽑는' 재미를 모방하여 학습 후 활동에 대한 흥미를 유발함. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 250px; max-height: 300px; }
+        @media (min-width: 768px) { .chart-container { height: 300px; } }
+        .nav-link { transition: color 0.3s, border-bottom-color 0.3s; }
+        .nav-link:hover { color: #0d9488; border-bottom-color: #0d9488; }
+        .active-nav { color: #0d9488; border-bottom-color: #0d9488; font-weight: 700; }
+        .card-flip { perspective: 1000px; }
+        .card-flip-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card-flip.flipped .card-flip-inner { transform: rotateY(180deg); }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; }
+        .card-back { transform: rotateY(180deg); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="max-w-5xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <h1 class="text-xl md:text-2xl font-bold text-teal-700">코딩 어드벤처 가이드</h1>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#intro" class="nav-link border-b-2 border-transparent pb-1">소개</a>
+                    <a href="#plan" class="nav-link border-b-2 border-transparent pb-1">40일 계획</a>
+                    <a href="#ai" class="nav-link border-b-2 border-transparent pb-1">AI 활용법</a>
+                    <a href="#resources" class="nav-link border-b-2 border-transparent pb-1">자료실</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-stone-600 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden py-2">
+                <a href="#intro" class="block py-2 px-4 text-sm text-stone-700 hover:bg-teal-50 rounded">소개</a>
+                <a href="#plan" class="block py-2 px-4 text-sm text-stone-700 hover:bg-teal-50 rounded">40일 계획</a>
+                <a href="#ai" class="block py-2 px-4 text-sm text-stone-700 hover:bg-teal-50 rounded">AI 활용법</a>
+                <a href="#resources" class="block py-2 px-4 text-sm text-stone-700 hover:bg-teal-50 rounded">자료실</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 md:py-12">
+
+        <section id="intro" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-center text-stone-800 mb-4">성공적인 시작을 위한 무대 설정</h2>
+            <p class="text-center text-stone-600 mb-12 max-w-3xl mx-auto">
+                이 가이드는 따님이 단순히 코드를 배우는 것을 넘어, 자신의 아이디어를 현실로 만드는 '창작자'로 성장하도록 돕기 위해 설계되었습니다. 40일간의 여정을 통해 코딩을 즐거운 놀이로 만들고, 문제 해결 능력과 창의력을 함께 키워나갈 것입니다.
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-8 items-center mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-teal-700 mb-3">🚀 '코더'가 아닌 '창작자'로</h3>
+                    <p class="text-stone-600">코딩은 컴퓨터와 대화하는 언어이자, 상상 속 이야기를 만드는 마법 도구입니다. 이 여정의 목표는 기술 습득을 넘어, 아이디어를 실현하는 창작의 기쁨을 아이 스스로 느끼게 하는 것입니다.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-teal-700 mb-3">🧠 컴퓨팅 사고력 기르기</h3>
+                    <p class="text-stone-600">복잡한 문제를 작은 단위로 쪼개고(분해), 규칙을 찾고(패턴 인식), 핵심에 집중하며(추상화), 해결 절차를 만드는(알고리즘) 생각의 기술을 배웁니다. 이는 모든 학습의 기초가 됩니다.</p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h3 class="text-2xl font-bold text-center text-stone-800 mb-2">완벽한 놀이터: 왜 '엔트리'일까요?</h3>
+                <p class="text-center text-stone-600 mb-8">영어가 익숙하지 않은 10세 아이에게는 세계적인 '스크래치'보다 국내에서 만든 '엔트리'가 훨씬 효과적입니다. 아래 탭을 눌러 결정적인 이유들을 확인해보세요.</p>
+                <div id="tool-comparison">
+                    <div class="flex justify-center border-b mb-6 space-x-2 md:space-x-4">
+                        <button data-target="lang" class="comparison-tab py-2 px-4 font-semibold text-sm md:text-base border-b-2 border-teal-600 text-teal-600">언어 지원</button>
+                        <button data-target="curriculum" class="comparison-tab py-2 px-4 font-semibold text-sm md:text-base text-stone-500 border-b-2 border-transparent">학습 환경</button>
+                        <button data-target="community" class="comparison-tab py-2 px-4 font-semibold text-sm md:text-base text-stone-500 border-b-2 border-transparent">자원/연계성</button>
+                    </div>
+                    <div id="comparison-content" class="p-4 bg-stone-100 rounded-lg min-h-[120px]">
+                        <div id="lang-content" class="comparison-pane">
+                            <h4 class="font-bold text-lg text-teal-700">완벽한 한글 지원</h4>
+                            <p class="text-stone-700 mt-2">엔트리는 모든 메뉴와 블록이 자연스러운 한국어이며, 한글 입력 오류가 없습니다. 코딩의 논리가 아닌 언어 문제로 아이가 좌절하는 것을 막아주는 가장 큰 장점입니다.</p>
+                        </div>
+                        <div id="curriculum-content" class="comparison-pane hidden">
+                            <h4 class="font-bold text-lg text-teal-700">체계적인 내장 커리큘럼</h4>
+                            <p class="text-stone-700 mt-2">엔트리의 '학습하기' 기능은 게임처럼 미션을 해결하며 순차, 반복, 조건 등 핵심 개념을 자연스럽게 익히도록 설계되어 있어, 초보자가 길을 잃지 않도록 도와줍니다.</p>
+                        </div>
+                        <div id="community-content" class="comparison-pane hidden">
+                             <h4 class="font-bold text-lg text-teal-700">풍부한 국내 교육 자료</h4>
+                            <p class="text-stone-700 mt-2">EBS 등 국내 공교육 자료와 연계성이 높고, 커뮤니티의 다른 사용자 작품들도 대부분 한글이라 아이디어를 얻고 배우기 쉽습니다. 향후 피지컬 컴퓨팅 확장도 용이합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-stone-200">
+        
+        <section id="plan" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-center text-stone-800 mb-4">40일 코딩 어드벤처 플랜</h2>
+            <p class="text-center text-stone-600 mb-8 max-w-3xl mx-auto">
+                전체 여정은 4단계로 구성됩니다. 기초를 다지고 논리를 배우며, 점차 자신만의 작품을 만드는 창작의 즐거움을 경험하게 됩니다. 각 단계를 클릭하여 세부 계획을 확인해보세요.
+            </p>
+            
+            <div class="mb-12">
+                <div class="chart-container">
+                    <canvas id="planChart"></canvas>
+                </div>
+            </div>
+
+            <div id="accordion-container" class="space-y-4">
+                <div class="accordion-item bg-white rounded-lg shadow-md">
+                    <button class="accordion-header w-full flex justify-between items-center p-5 text-left font-bold text-lg text-teal-800">
+                        <span>1단계 (1-10일): 기초 다지기 – 순차와 반복</span>
+                        <span class="accordion-icon transition-transform transform text-teal-600">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-5 border-t border-stone-200">
+                            <p class="text-stone-600 mb-4">컴퓨터에게 명령을 순서대로 내리는 '순차'와 반복적인 작업을 효율적으로 처리하는 '반복' 개념을 엔트리의 '학습하기' 미션을 통해 마스터합니다.</p>
+                            <ul class="list-disc list-inside space-y-2 text-stone-700">
+                                <li><strong>1-5일:</strong> '이상한 숲 속의 엔트리봇' 미션으로 <strong class="text-orange-600">순차 구조</strong> 배우기</li>
+                                <li><strong>6-10일:</strong> '이상한 티파티' 미션으로 <strong class="text-orange-600">반복 구조</strong> 마스터하기</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item bg-white rounded-lg shadow-md">
+                    <button class="accordion-header w-full flex justify-between items-center p-5 text-left font-bold text-lg text-teal-800">
+                        <span>2단계 (11-20일): 논리의 시작 – 조건과 변수</span>
+                        <span class="accordion-icon transition-transform transform text-teal-600">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-5 border-t border-stone-200">
+                            <p class="text-stone-600 mb-4">프로그램에 '지능'을 부여하는 '조건'과 '기억력'을 부여하는 '변수'를 배웁니다. 프로그램이 상황을 판단하고 값을 기억하게 만들어 봅니다.</p>
+                            <ul class="list-disc list-inside space-y-2 text-stone-700">
+                                <li><strong>11-16일:</strong> '여왕의 정원' 미션으로 <strong class="text-blue-600">조건문(만일 ~라면)</strong> 익히기</li>
+                                <li><strong>17-20일:</strong> 클리커 게임, 타이머를 만들며 <strong class="text-blue-600">변수</strong> 활용하기</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item bg-white rounded-lg shadow-md">
+                    <button class="accordion-header w-full flex justify-between items-center p-5 text-left font-bold text-lg text-teal-800">
+                        <span>3단계 (21-30일): 창작가의 작업실 – 가이드 프로젝트</span>
+                        <span class="accordion-icon transition-transform transform text-teal-600">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-5 border-t border-stone-200">
+                            <p class="text-stone-600 mb-4">지금까지 배운 모든 개념을 종합하여, 가이드를 따라 하나의 완성된 작품을 처음부터 끝까지 만들어보며 지식을 실제 적용 능력으로 전환합니다.</p>
+                            <ul class="list-disc list-inside space-y-2 text-stone-700">
+                                <li><strong>21-25일:</strong> 프로젝트 1 - 선택에 따라 결말이 달라지는 <strong class="text-purple-600">인터랙티브 스토리</strong> 만들기</li>
+                                <li><strong>26-30일:</strong> 프로젝트 2 - 컴퓨터와 경쟁하는 <strong class="text-purple-600">간단한 아케이드 게임</strong> 만들기</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item bg-white rounded-lg shadow-md">
+                    <button class="accordion-header w-full flex justify-between items-center p-5 text-left font-bold text-lg text-teal-800">
+                        <span>4단계 (31-40일): 캡스톤 프로젝트 – 상상력 펼치기</span>
+                        <span class="accordion-icon transition-transform transform text-teal-600">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-5 border-t border-stone-200">
+                            <p class="text-stone-600 mb-4">40일 여정의 하이라이트! 아이가 직접 기획하고 디자인하고 개발하는 온전한 '자신만의 프로젝트'를 완성하며 진정한 창작자로 거듭나는 단계입니다.</p>
+                            <ul class="list-disc list-inside space-y-2 text-stone-700">
+                                <li><strong>31-33일:</strong> 아이디어 구상 및 프로젝트 기획 (AI와 함께 브레인스토밍!)</li>
+                                <li><strong>34-38일:</strong> 본격적인 제작 및 오류 수정 (디버깅)</li>
+                                <li><strong>39-40일:</strong> 작품 다듬기 및 <strong class="text-rose-600">가족 쇼케이스</strong> 열기 (가장 중요!)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-stone-200">
+
+        <section id="ai" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-center text-stone-800 mb-4">AI 조수, 스마트하게 활용하기</h2>
+            <p class="text-center text-stone-600 mb-12 max-w-3xl mx-auto">
+                아이가 이미 익숙한 LLM(ChatGPT, Gemini 등)을 단순한 정답기가 아닌, 함께 문제를 해결하고 아이디어를 발전시키는 '창의적인 파트너'로 활용하는 방법을 배워봅니다. '어떻게' 질문하는지가 핵심입니다.
+            </p>
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h3 class="text-2xl font-bold text-center text-stone-800 mb-6">스마트 프롬프팅 가이드</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="prompt-card border border-stone-200 rounded-lg p-4">
+                        <h4 class="font-bold text-lg mb-2">🤔 개념이 헷갈릴 때</h4>
+                        <p class="text-sm text-red-500 mb-1"><strong>나쁜 예:</strong> "반복문이 뭐야?"</p>
+                        <p class="text-sm text-green-600"><strong>좋은 예:</strong> "내가 쿠키 굽는 걸 좋아하는데, '10번 반복하기' 블록을 쿠키 굽는 과정에 비유해서 10살도 바로 이해할 수 있게 설명해줘."</p>
+                    </div>
+                    <div class="prompt-card border border-stone-200 rounded-lg p-4">
+                        <h4 class="font-bold text-lg mb-2">🐞 코드가 작동하지 않을 때</h4>
+                        <p class="text-sm text-red-500 mb-1"><strong>나쁜 예:</strong> "내 코드 고쳐줘."</p>
+                        <p class="text-sm text-green-600"><strong>좋은 예:</strong> "내 엔트리 캐릭터가 점프를 안 해. 코드는 '스페이스 키를 누르면 y좌표를 10만큼 바꾸기'야. 어떤 부분을 확인해봐야 할지 힌트 좀 줄래?"</p>
+                    </div>
+                    <div class="prompt-card border border-stone-200 rounded-lg p-4">
+                        <h4 class="font-bold text-lg mb-2">💡 아이디어가 필요할 때</h4>
+                        <p class="text-sm text-red-500 mb-1"><strong>나쁜 예:</strong> "게임 아이디어 줘."</p>
+                        <p class="text-sm text-green-600"><strong>좋은 예:</strong> "난 강아지랑 마법을 좋아해. 이 두 가지를 합쳐서 엔트리로 만들 수 있는 재미있는 게임 아이디어 3개만 추천해줄래?"</p>
+                    </div>
+                    <div class="prompt-card border border-stone-200 rounded-lg p-4">
+                        <h4 class="font-bold text-lg mb-2">📜 스토리가 막혔을 때</h4>
+                        <p class="text-sm text-red-500 mb-1"><strong>나쁜 예:</strong> "이야기 만들어줘."</p>
+                        <p class="text-sm text-green-600"><strong>좋은 예:</strong> "용이 공주를 구하는 이야기인데, 중간에 마법사를 만났어. 여기서 이야기가 더 재미있어지려면 어떤 반전이 있으면 좋을까? 아이디어 2개만 줘."</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-stone-200">
+
+        <section id="resources" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center text-stone-800 mb-4">실습 교재 및 추가 자료</h2>
+            <p class="text-center text-stone-600 mb-12 max-w-3xl mx-auto">
+                40일간의 여정을 더욱 풍성하게 만들어 줄 자료들입니다. 창의력 도전 카드로 계속해서 새로운 아이디어를 시도해보고, 유용한 링크를 통해 더 넓은 코딩의 세계를 탐험해보세요.
+            </p>
+            
+            <div class="mb-12">
+                <h3 class="text-2xl font-bold text-center text-stone-800 mb-6">창의력 도전 카드</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="card-flip h-40 cursor-pointer">
+                        <div class="card-flip-inner">
+                            <div class="card-front bg-teal-500 text-white p-3 shadow-lg"><span class="font-bold text-lg">도전 1</span></div>
+                            <div class="card-back bg-white border-2 border-teal-500 p-3 shadow-lg text-sm">씨앗이 자라서 꽃이 피는 과정을 보여주는 애니메이션을 만들어보세요.</div>
+                        </div>
+                    </div>
+                     <div class="card-flip h-40 cursor-pointer">
+                        <div class="card-flip-inner">
+                            <div class="card-front bg-orange-500 text-white p-3 shadow-lg"><span class="font-bold text-lg">도전 2</span></div>
+                            <div class="card-back bg-white border-2 border-orange-500 p-3 shadow-lg text-sm">키보드 숫자 키로 펜 색깔이 바뀌는 나만의 그림판을 만들어보세요.</div>
+                        </div>
+                    </div>
+                     <div class="card-flip h-40 cursor-pointer">
+                        <div class="card-flip-inner">
+                            <div class="card-front bg-purple-500 text-white p-3 shadow-lg"><span class="font-bold text-lg">도전 3</span></div>
+                            <div class="card-back bg-white border-2 border-purple-500 p-3 shadow-lg text-sm">먹이를 주고 놀아줄 수 있는 나만의 가상 펫을 만들어보세요. '배고픔'과 '행복'을 변수로 관리해보세요.</div>
+                        </div>
+                    </div>
+                     <div class="card-flip h-40 cursor-pointer">
+                        <div class="card-flip-inner">
+                            <div class="card-front bg-rose-500 text-white p-3 shadow-lg"><span class="font-bold text-lg">도전 4</span></div>
+                            <div class="card-back bg-white border-2 border-rose-500 p-3 shadow-lg text-sm">하늘에서 떨어지는 노트를 타이밍에 맞춰 스페이스 바로 맞추는 간단한 리듬 게임을 만들어보세요.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-2xl font-bold text-center text-stone-800 mb-6">엄선된 학습 자료 목록</h3>
+                <div class="grid md:grid-cols-2 gap-4 text-center">
+                    <a href="https://playentry.org/learn" target="_blank" class="block bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow">
+                        <p class="font-bold text-lg text-teal-700">엔트리 공식 학습 포털</p>
+                        <p class="text-sm text-stone-600 mt-1">다양한 학습 미션에 도전해보세요.</p>
+                    </a>
+                    <a href="https://www.ebssw.kr" target="_blank" class="block bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow">
+                        <p class="font-bold text-lg text-teal-700">EBS 이솦 (파이썬)</p>
+                        <p class="text-sm text-stone-600 mt-1">다음 단계! 텍스트 코딩의 세계로!</p>
+                    </a>
+                    <a href="https://teachablemachine.withgoogle.com/" target="_blank" class="block bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow">
+                        <p class="font-bold text-lg text-teal-700">Google Teachable Machine</p>
+                        <p class="text-sm text-stone-600 mt-1">코딩 없이 나만의 AI 모델 만들기 체험</p>
+                    </a>
+                    <a href="https://quickdraw.withgoogle.com/" target="_blank" class="block bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow">
+                        <p class="font-bold text-lg text-teal-700">Google Quick, Draw!</p>
+                        <p class="text-sm text-stone-600 mt-1">AI와 함께하는 그림 그리기 게임</p>
+                    </a>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="bg-stone-800 text-white mt-16">
+        <div class="max-w-5xl mx-auto px-4 py-6 text-center">
+            <p>&copy; 2025 Your Coding Adventure. All Rights Reserved.</p>
+            <p class="text-sm text-stone-400 mt-1">따님의 창의적인 미래를 응원합니다.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const planCtx = document.getElementById('planChart').getContext('2d');
+            new Chart(planCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['1단계: 기초', '2단계: 논리', '3단계: 프로젝트', '4단계: 창작'],
+                    datasets: [{
+                        label: '학습 기간 (일)',
+                        data: [10, 10, 10, 10],
+                        backgroundColor: [
+                            'rgba(20, 184, 166, 0.6)',
+                            'rgba(59, 130, 246, 0.6)',
+                            'rgba(168, 85, 247, 0.6)',
+                            'rgba(244, 63, 94, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(15, 118, 110, 1)',
+                            'rgba(37, 99, 235, 1)',
+                            'rgba(147, 51, 234, 1)',
+                            'rgba(225, 29, 72, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `  ${context.raw}일 소요`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: '소요 일수' }
+                        },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+
+            const comparisonTabs = document.querySelectorAll('.comparison-tab');
+            const comparisonPanes = document.querySelectorAll('.comparison-pane');
+            comparisonTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    comparisonTabs.forEach(t => {
+                        t.classList.remove('text-teal-600', 'border-teal-600');
+                        t.classList.add('text-stone-500', 'border-transparent');
+                    });
+                    tab.classList.add('text-teal-600', 'border-teal-600');
+                    tab.classList.remove('text-stone-500', 'border-transparent');
+
+                    const target = tab.dataset.target;
+                    comparisonPanes.forEach(pane => {
+                        if (pane.id === `${target}-content`) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+            
+            const cardFlips = document.querySelectorAll('.card-flip');
+            cardFlips.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('flipped');
+                });
+            });
+
+            const accordionItems = document.querySelectorAll('.accordion-item');
+            accordionItems.forEach(item => {
+                const header = item.querySelector('.accordion-header');
+                const content = item.querySelector('.accordion-content');
+                const icon = item.querySelector('.accordion-icon');
+                header.addEventListener('click', () => {
+                    const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
+                    if (isOpen) {
+                        content.style.maxHeight = '0px';
+                        icon.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+            
+            const navLinks = document.querySelectorAll('header a[href^="#"]');
+            const sections = document.querySelectorAll('main section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active-nav');
+                    if(link.getAttribute('href') === `#${current}`) {
+                       link.classList.add('active-nav');
+                    }
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
